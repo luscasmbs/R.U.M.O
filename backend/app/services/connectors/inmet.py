@@ -28,3 +28,19 @@ class InmetConnector:
             response = await client.get(f"{self.base_url}/estacao/dados/{day.isoformat()}/{station_code}")
             response.raise_for_status()
             return response.json()
+
+    async def weather_envelope(self, station_code: str, day: date) -> dict:
+        """Return a stable source contract for ETL and future feature engineering."""
+        return {
+            "source": "inmet",
+            "dataset": "station_data",
+            "municipality_code": None,
+            "observed_at": day.isoformat(),
+            "records": await self.station_data(station_code, day),
+            "schema": {
+                "temperature_c": "float",
+                "rain_mm": "float",
+                "humidity_pct": "float",
+                "wind_kmh": "float",
+            },
+        }

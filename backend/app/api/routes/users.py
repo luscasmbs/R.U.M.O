@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -23,6 +23,8 @@ def list_users(_: User = Depends(require_roles(UserRole.admin)), db: Session = D
 
 @router.post("", response_model=UserRead)
 def create_user(payload: UserCreate, _: User = Depends(require_roles(UserRole.admin)), db: Session = Depends(get_db)):
+    if db.scalar(select(User).where(User.email == payload.email)):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="E-mail já cadastrado.")
     user = User(
         name=payload.name,
         email=payload.email,

@@ -13,7 +13,9 @@ class UserCreate(BaseModel):
 class UserRead(BaseModel):
     id: str
     name: str
-    email: EmailStr
+    # The seeded development user uses the reserved .local domain.
+    # UserCreate keeps EmailStr validation for new accounts.
+    email: str
     role: UserRole
     is_active: bool
 

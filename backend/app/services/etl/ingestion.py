@@ -16,6 +16,7 @@ from app.core.config import settings
 from app.models.incident import Incident
 from app.models.neighborhood import Neighborhood
 from app.services.connectors.apac import ApacConnector
+from app.services.connectors.datasus import DatasusConnector
 from app.services.connectors.ibge_geo import IbgeGeoConnector
 from app.services.connectors.inmet import InmetConnector
 from app.services.connectors.recife_ckan import RecifeCkanConnector
@@ -77,7 +78,8 @@ class IngestionService:
             inserted = 0
             async with httpx.AsyncClient(timeout=120, follow_redirects=True) as client:
                 for resource in resources:
-                    if not any(year in (resource["name"] or "") for year in ["2023", "2024", "2025", "2026"]):
+                    history_years = {str(year) for year in range(datetime.utcnow().year - settings.data_history_years, datetime.utcnow().year + 1)}
+                    if not any(year in (resource["name"] or "") for year in history_years):
                         continue
                     response = await client.get(resource["url"])
                     response.raise_for_status()
@@ -186,3 +188,15 @@ class IngestionService:
         links = await ApacConnector().monitoring_links()
         mark_source_success(self.db, source, {"monitoring_links": links[:20]})
         return {"source": source.name, "links": len(links)}
+
+    async def register_datasus(self) -> dict:
+        source = get_or_create_source(
+            self.db,
+            name="DATASUS - Notificações epidemiológicas",
+            kind="health_data",
+            base_url=str(settings.datasus_base_url),
+            refresh_frequency="mensal",
+        )
+        metadata = await DatasusConnector().metadata()
+        mark_source_success(self.db, source, metadata)
+        return {"source": source.name, "mode": metadata["mode"], "records": len(metadata["records"]), "ready": True}

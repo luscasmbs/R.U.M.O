@@ -48,5 +48,15 @@ export function logout() {
 
 export function getStoredUser() {
   const raw = localStorage.getItem("rumo_user");
-  return raw ? JSON.parse(raw) : null;
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    localStorage.removeItem("rumo_user");
+    return null;
+  }
+}
+
+export function getApiErrorMessage(error, fallback = "Não foi possível concluir a operação.") {
+  return error?.response?.data?.detail || error?.message || fallback;
 }
