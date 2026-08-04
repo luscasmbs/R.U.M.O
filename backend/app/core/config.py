@@ -17,10 +17,12 @@ class Settings(BaseSettings):
 
     recife_ckan_base_url: AnyHttpUrl = "https://dados.recife.pe.gov.br/api/3/action"
     recife_arboviruses_dataset: str = "casos-de-dengue-zika-e-chikungunya"
+    datasus_base_url: AnyHttpUrl = "https://datasus.saude.gov.br"
     inmet_api_base_url: AnyHttpUrl = "https://apitempo.inmet.gov.br"
     apac_base_url: AnyHttpUrl = "https://www.apac.pe.gov.br"
     ibge_geo_url: str = "https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_de_setores_censitarios__divisoes_intramunicipais/censo_2022/malha_de_bairros/PE/PE_bairros_2022.zip"
     recife_municipality_code: str = "2611606"
+    data_history_years: int = 5
 
     model_dir: Path = Path("storage/models")
 

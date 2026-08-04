@@ -9,6 +9,7 @@ joblib==1.4.2
 numpy==2.2.1
 pandas==2.2.3
 passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
 psycopg[binary]==3.2.3
 pydantic==2.10.4
 pydantic-settings==2.7.0

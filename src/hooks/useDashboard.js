@@ -20,3 +20,13 @@ export function useDataSources() {
     },
   });
 }
+
+export function useForecasts(filters) {
+  return useQuery({
+    queryKey: ["forecasts", filters],
+    queryFn: async () => {
+      const { data } = await api.get("/forecasts", { params: filters });
+      return data;
+    },
+  });
+}

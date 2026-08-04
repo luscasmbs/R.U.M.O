@@ -1,19 +1,22 @@
-# R.U.M.O MVP
+# R.U.M.O
 
 Rede Unificada de Monitoramento de Ocorrências para Recife/PE.
+
+## Visão do produto
+
+O R.U.M.O é uma plataforma de inteligência territorial baseada em dados públicos. Ela consolida ocorrências epidemiológicas, território, clima e monitoramento hídrico para apoiar prevenção, planejamento e resposta do poder público.
 
 ## O que foi implementado
 
 - Frontend React + Vite com React Router, Axios, React Query, Leaflet e Recharts.
-- Backend FastAPI com JWT, RBAC, CORS, rate limiting simples, logs, healthcheck e tratamento global de erros.
-- PostgreSQL + PostGIS via Docker Compose.
-- SQLAlchemy + Alembic com tabelas: usuários, bairros, ocorrências, previsões, alertas, fontes e logs.
-- Conectores reais:
-  - Recife CKAN para arboviroses.
-  - INMET para estações/dados meteorológicos.
-  - APAC com coleta de links oficiais de monitoramento/boletins quando não há API JSON estável.
-  - IBGE para malha geográfica oficial de bairros/setores.
-- Pipeline inicial de ML real com pandas, scikit-learn e joblib.
+- Dashboard com KPIs, filtros, séries temporais, composição de ocorrências, mapa com camadas, ranking territorial e alertas acionáveis.
+- Página de previsões com score, probabilidade, confiança, fatores contribuintes, métricas AUC/precisão/recall/F1 e histórico.
+- Backend FastAPI com JWT, RBAC, CORS, rate limiting, healthcheck e tratamento global de erros.
+- PostgreSQL + PostGIS via Docker Compose e migrações Alembic.
+- Conectores para Portal de Dados Abertos do Recife, INMET, APAC e IBGE, além do contrato de integração preparado para DATASUS.
+- Pipeline de ML epidemiológico com Random Forest, fallback estatístico por média móvel e explicabilidade persistida.
+- Registro de fontes, versionamento de modelo e auditoria de ingestões/treinos.
+- Catálogo demonstrativo no frontend usando o mesmo contrato dos dados reais para desenvolvimento sem as APIs disponíveis.
 
 ## Executar localmente
 
@@ -32,17 +35,20 @@ admin@rumo.local
 admin123
 ```
 
-## Fluxo inicial do MVP
+## Fluxo inicial
 
 1. Entrar no frontend.
-2. Abrir `Operações`.
-3. Executar ingestão da malha IBGE.
-4. Executar ingestão do Recife CKAN.
-5. Treinar o modelo epidemiológico.
-6. Abrir o dashboard.
+2. Abrir `Operações` e executar a malha IBGE.
+3. Executar a carga do Recife CKAN e registrar INMET/APAC/DATASUS.
+4. Treinar o modelo epidemiológico.
+5. Consultar `Dashboard` e `Previsões`.
 
-## Observações técnicas
+## Contrato de dados
 
-O módulo epidemiológico usa dados históricos reais persistidos. Se ainda não houver volume suficiente para treino supervisionado, o sistema usa fallback estatístico baseado em média móvel real e marca isso na explicabilidade da previsão.
+O contrato principal usa `contract_version`, `filters`, `metrics`, `geojson`, `top_neighborhoods`, `time_series`, `category_breakdown`, `model` e `alerts`. O frontend sinaliza quando está no modo demonstração; os dados demonstrativos não são apresentados como dados oficiais.
 
-Segurança pública, alagamento e deslizamento estão estruturados na arquitetura, mas dependem de granularidade pública suficiente ou convênio institucional para virar previsão territorial com validade operacional.
+DATASUS possui um adaptador pronto para o esquema de notificações, mas a carga produtiva depende do dataset epidemiológico oficial escolhido (TabNet, arquivo ou fluxo institucional). APAC permanece em monitoramento de links oficiais enquanto não houver endpoint JSON público estável.
+
+## Limitações conhecidas
+
+O desempenho depende da qualidade, periodicidade e granularidade das fontes públicas. Subnotificação e atraso de atualização podem afetar o risco estimado. Alagamentos, deslizamentos e segurança já têm módulos na arquitetura e na interface, mas ainda dependem de bases territoriais públicas suficientes ou de convênio institucional para previsão operacional.

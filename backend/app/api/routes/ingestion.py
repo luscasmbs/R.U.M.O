@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import require_roles
 from app.db.session import get_db
 from app.models.user import User, UserRole
+from app.models.audit_log import AuditLog
 from app.services.etl.ingestion import IngestionService
 
 router = APIRouter()
@@ -27,6 +28,11 @@ async def run_ingestion(payload: IngestionRequest, _: User = Depends(require_rol
             results[source] = await service.register_inmet()
         elif source == "apac":
             results[source] = await service.register_apac()
+        elif source == "datasus":
+            results[source] = await service.register_datasus()
         else:
             results[source] = {"skipped": True, "reason": "Fonte desconhecida."}
+    actor = _
+    db.add(AuditLog(user_id=actor.id, action="ingestion.run", entity="data_source", payload={"sources": payload.sources, "results": results}))
+    db.commit()
     return {"results": results}

@@ -24,6 +24,8 @@ def list_data_sources(_: User = Depends(get_current_user), db: Session = Depends
             "last_success_at": s.last_success_at,
             "last_error": s.last_error,
             "metadata": s.metadata_json,
+            "coverage": (s.metadata_json or {}).get("coverage") or (s.metadata_json or {}).get("dataset"),
+            "records": (s.metadata_json or {}).get("inserted") or (s.metadata_json or {}).get("records", 0),
         }
         for s in sources
     ]
