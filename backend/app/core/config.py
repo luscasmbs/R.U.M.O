@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     ibge_geo_url: str = "https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_de_setores_censitarios__divisoes_intramunicipais/censo_2022/malha_de_bairros/PE/PE_bairros_2022.zip"
     recife_municipality_code: str = "2611606"
     data_history_years: int = 5
+    model_min_history_days: int = 365
+    forecast_horizons: list[int] = [1, 7, 28]
 
     model_dir: Path = Path("storage/models")
 

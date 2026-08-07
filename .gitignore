@@ -12,6 +12,16 @@ dist
 dist-ssr
 *.local
 
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+.venv/
+backend/.venv/
+
+# Local model and document-analysis outputs
+storage/models/
+.tmp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
