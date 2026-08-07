@@ -60,11 +60,14 @@ export function ForecastsPage() {
     version: selected.model_version,
     validation_metrics: selected.explanation?.validation_metrics || demoDashboard.model.validation_metrics,
   } : demoDashboard.model;
+  const freshnessDays = selected?.explanation?.data_freshness_days;
+  const trainingEnd = selected?.explanation?.training_history?.data_end;
 
   return (
     <div className="page-stack">
       <header className="page-header"><div><span className="eyebrow">Modelagem preditiva</span><h1>Previsões e explicabilidade</h1><p>Probabilidade de excedência, carga esperada, score de prioridade e fatores observados por território.</p></div>{isDemo && <span className="demo-badge">Modo demonstração · contrato real</span>}</header>
       {query.error && <div className="inline-notice"><Info size={17} /> {getApiErrorMessage(query.error, "A API de previsões ainda não está disponível; exibindo o contrato demonstrativo.")}</div>}
+      {!isDemo && freshnessDays > 14 && trainingEnd && <div className="inline-notice"><Info size={17} /> A última observação disponível é de {new Date(`${trainingEnd}T12:00:00`).toLocaleDateString("pt-BR")} ({freshnessDays} dias de defasagem). Use esta projeção para análise histórica; uma decisão atual exige nova ingestão e novo treinamento.</div>}
       <section className="forecast-hero"><div className="forecast-hero-copy"><div className="hero-icon"><BrainCircuit size={24} /></div><div><span className="section-kicker">Horizonte de previsão</span><h2>{horizonLabel(horizonDays)}</h2><p>O modelo usa painel diário contínuo, histórico de cinco anos, sazonalidade e validação temporal. O piso de qualidade exige pelo menos 365 dias de dados.</p></div></div><div className="hero-stat"><strong>{uniqueItems.filter((item) => item.risk_score >= 65).length}</strong><span>territórios<br />em alto risco</span></div><div className="hero-stat"><strong>{Math.round((selected?.confidence || 0) * 100)}%</strong><span>confiança<br />da previsão</span></div></section>
       <section className="control-bar forecast-filters"><div className="control-group"><label htmlFor="forecast-disease">Alvo epidemiológico</label><select id="forecast-disease" value={disease} onChange={(event) => setDisease(event.target.value)}>{moduleConfigs.epidemiology.categories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div><div className="control-group"><label htmlFor="forecast-horizon">Horizonte</label><select id="forecast-horizon" value={horizonDays} onChange={(event) => setHorizonDays(Number(event.target.value))}><option value={1}>24 horas</option><option value={7}>7 dias</option><option value={28}>4 semanas</option></select></div><div className="control-spacer" /><span className="data-disclaimer"><ShieldCheck size={15} /> Cada horizonte possui alvo e validação independentes</span></section>
       <section className="forecast-layout">

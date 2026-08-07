@@ -25,6 +25,14 @@ function mergeRiskWithGeometry(geometry, riskGeoJSON) {
   };
 }
 
+function formatDataDate(value) {
+  if (!value) return "data não informada";
+  const normalized = typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)
+    ? `${value.slice(0, 10)}T12:00:00`
+    : value;
+  return new Date(normalized).toLocaleDateString("pt-BR");
+}
+
 export function DashboardPage() {
   const [module, setModule] = useState("epidemiology");
   const [category, setCategory] = useState("all");
@@ -47,6 +55,7 @@ export function DashboardPage() {
     () => (isDemo ? view.geojson : mergeRiskWithGeometry(geometryQuery.data, view.geojson)),
     [geometryQuery.data, isDemo, view.geojson],
   );
+  const dataEnd = view.model?.training_history?.data_end || view.data_quality?.coverage_end;
 
   async function runRefresh() {
     setNotice("");
@@ -67,7 +76,7 @@ export function DashboardPage() {
           <h1>Painel de situação urbana</h1>
           <p>Uma leitura integrada de ocorrências, território, clima e risco projetado para orientar a ação pública.</p>
         </div>
-        <div className="header-status"><span className="status-dot" /> Atualizado em {new Date(view.generated_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
+        <div className="header-status"><span className="status-dot" /> {isDemo ? "Dados demonstrativos" : `Dados observados até ${formatDataDate(dataEnd)}`}</div>
       </header>
 
       <section className="control-bar" aria-label="Filtros do painel">
