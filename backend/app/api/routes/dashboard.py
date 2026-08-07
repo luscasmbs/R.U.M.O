@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user
+from app.api.deps import get_optional_current_user
 from app.db.session import get_db
 from app.models.alert import Alert
 from app.models.data_source import DataSource
@@ -28,6 +28,18 @@ def _date_filters(start_date: date | None, end_date: date | None) -> list:
     return filters
 
 
+def _forecast_probability(forecast: Forecast | None) -> float | None:
+    if not forecast:
+        return None
+    explanation = forecast.explanation or {}
+    probability = explanation.get("probability")
+    if probability is None:
+        if explanation.get("method") == "moving_average_baseline":
+            return None
+        return round(float(forecast.risk_score) / 100, 4)
+    return round(float(probability), 4)
+
+
 @router.get("")
 def dashboard(
     module: str = Query("epidemiology", pattern="^[a-z_]+$"),
@@ -35,9 +47,10 @@ def dashboard(
     municipality_code: str = Query("2611606", min_length=1, max_length=20),
     start_date: date | None = None,
     end_date: date | None = None,
-    period_days: int = Query(90, ge=1, le=1825),
+    period_days: int = Query(365, ge=1, le=1825),
     category: str | None = Query(None, pattern="^[a-z_]+$"),
-    _: User = Depends(get_current_user),
+    include_geometry: bool = Query(True),
+    _: User | None = Depends(get_optional_current_user),
     db: Session = Depends(get_db),
 ):
     if not start_date and not end_date:
@@ -54,7 +67,11 @@ def dashboard(
 
     latest_forecast = (
         select(Forecast.neighborhood_id, func.max(Forecast.created_at).label("created_at"))
-        .where(Forecast.module == module, Forecast.horizon_days == window_days)
+        .where(
+            Forecast.module == module,
+            Forecast.horizon_days == window_days,
+            Forecast.explanation["target_disease"].as_string() == "all",
+        )
         .group_by(Forecast.neighborhood_id)
         .subquery()
     )
@@ -71,7 +88,12 @@ def dashboard(
             & (Forecast.created_at == latest_forecast.c.created_at),
         )
         .join(Neighborhood, Neighborhood.id == Forecast.neighborhood_id, isouter=True)
-        .where(Neighborhood.municipality_code == municipality_code)
+        .where(
+            Forecast.module == module,
+            Forecast.horizon_days == window_days,
+            Forecast.explanation["target_disease"].as_string() == "all",
+            Neighborhood.municipality_code == municipality_code,
+        )
         .order_by(Forecast.risk_score.desc())
     ).all()
     risk_by_neighborhood = {forecast.neighborhood_id: forecast for forecast, *_ in forecast_rows}
@@ -84,36 +106,56 @@ def dashboard(
             .group_by(Incident.neighborhood_id)
         ).all()
     )
+    neighborhood_columns = [
+        Neighborhood.id,
+        Neighborhood.name,
+        Neighborhood.code,
+        Neighborhood.area_km2,
+        Neighborhood.centroid_lat,
+        Neighborhood.centroid_lon,
+    ]
+    if include_geometry:
+        neighborhood_columns.append(func.ST_AsGeoJSON(Neighborhood.geom).label("geometry"))
     neighborhoods = db.execute(
-        select(
-            Neighborhood.id,
-            Neighborhood.name,
-            Neighborhood.code,
-            Neighborhood.area_km2,
-            Neighborhood.centroid_lat,
-            Neighborhood.centroid_lon,
-            func.ST_AsGeoJSON(Neighborhood.geom).label("geometry"),
-        ).where(Neighborhood.geom.isnot(None), Neighborhood.municipality_code == municipality_code)
+        select(*neighborhood_columns).where(
+            Neighborhood.geom.isnot(None),
+            Neighborhood.municipality_code == municipality_code,
+        )
     ).all()
     overall_incident_counts = dict(
         db.execute(
             select(Incident.neighborhood_id, func.count(Incident.id))
             .join(Neighborhood, Neighborhood.id == Incident.neighborhood_id, isouter=True)
-            .where(*base_incident_filters, Incident.category == module, Neighborhood.municipality_code == municipality_code)
+            .where(
+                *base_incident_filters,
+                Incident.category == module,
+                Neighborhood.municipality_code == municipality_code,
+            )
             .group_by(Incident.neighborhood_id)
         ).all()
     )
+
     def adjusted_score(neighborhood_id, score):
         if selected_category == "all":
-            return round(score, 2)
+            return round(float(score), 2)
         total = max(int(overall_incident_counts.get(neighborhood_id, 0)), 1)
         selected = int(incident_counts.get(neighborhood_id, 0))
-        return round(min(100, score * (0.5 + 0.5 * selected / total)), 2)
+        return round(min(100, float(score) * (0.5 + 0.5 * selected / total)), 2)
+
+    def adjusted_probability(neighborhood_id, forecast):
+        probability = _forecast_probability(forecast)
+        if probability is None or selected_category == "all":
+            return probability
+        total = max(int(overall_incident_counts.get(neighborhood_id, 0)), 1)
+        selected = int(incident_counts.get(neighborhood_id, 0))
+        return round(min(1, probability * (0.5 + 0.5 * selected / total)), 4)
+
     features = []
     for row in neighborhoods:
         forecast = risk_by_neighborhood.get(row.id)
-        geometry = json.loads(row.geometry) if row.geometry else None
-        if not geometry:
+        raw_geometry = getattr(row, "geometry", None)
+        geometry = json.loads(raw_geometry) if raw_geometry else None
+        if include_geometry and not geometry:
             continue
         features.append(
             {
@@ -127,7 +169,7 @@ def dashboard(
                     "centroid_lat": row.centroid_lat,
                     "centroid_lon": row.centroid_lon,
                     "risk_score": adjusted_score(row.id, forecast.risk_score if forecast else 0),
-                    "probability": round(adjusted_score(row.id, forecast.risk_score if forecast else 0) / 100, 4),
+                    "probability": adjusted_probability(row.id, forecast),
                     "confidence": forecast.confidence if forecast else None,
                     "incident_count": int(incident_counts.get(row.id, 0)),
                 },
@@ -153,29 +195,75 @@ def dashboard(
     category_rows = db.execute(
         select(func.coalesce(Incident.disease, Incident.category), func.count(Incident.id))
         .join(Neighborhood, Neighborhood.id == Incident.neighborhood_id, isouter=True)
-        .where(*base_incident_filters, Incident.category == module, Neighborhood.municipality_code == municipality_code)
+        .where(
+            *base_incident_filters,
+            Incident.category == module,
+            Neighborhood.municipality_code == municipality_code,
+        )
         .group_by(func.coalesce(Incident.disease, Incident.category))
         .order_by(func.count(Incident.id).desc())
     ).all()
     alerts = db.execute(
         select(Alert, Neighborhood.name)
         .join(Neighborhood, Neighborhood.id == Alert.neighborhood_id, isouter=True)
-        .where(Alert.status == "active", Alert.module == module, Neighborhood.municipality_code == municipality_code)
+        .join(Forecast, Forecast.id == Alert.forecast_id)
+        .join(
+            latest_forecast,
+            (Forecast.neighborhood_id == latest_forecast.c.neighborhood_id)
+            & (Forecast.created_at == latest_forecast.c.created_at),
+        )
+        .where(
+            Alert.status == "active",
+            Alert.module == module,
+            Forecast.horizon_days == window_days,
+            Neighborhood.municipality_code == municipality_code,
+        )
         .order_by(Alert.created_at.desc())
         .limit(20)
     ).all()
 
     risk_scores = [float(forecast.risk_score) for forecast, *_ in forecast_rows]
     latest_forecast_obj = forecast_rows[0][0] if forecast_rows else None
-    validation_metrics = (latest_forecast_obj.explanation or {}).get("validation_metrics", {}) if latest_forecast_obj else {}
+    latest_explanation = (latest_forecast_obj.explanation or {}) if latest_forecast_obj else {}
+    validation_metrics = latest_explanation.get("validation_metrics", {})
     active_alerts = db.scalar(
         select(func.count(Alert.id))
         .join(Neighborhood, Neighborhood.id == Alert.neighborhood_id, isouter=True)
-        .where(Alert.status == "active", Alert.module == module, Neighborhood.municipality_code == municipality_code)
+        .join(Forecast, Forecast.id == Alert.forecast_id)
+        .join(
+            latest_forecast,
+            (Forecast.neighborhood_id == latest_forecast.c.neighborhood_id)
+            & (Forecast.created_at == latest_forecast.c.created_at),
+        )
+        .where(
+            Alert.status == "active",
+            Alert.module == module,
+            Forecast.horizon_days == window_days,
+            Neighborhood.municipality_code == municipality_code,
+        )
     ) or 0
     incident_total = sum(int(value) for value in incident_counts.values())
+    coverage_start, coverage_end, raw_incidents, geocoded_incidents = db.execute(
+        select(
+            func.min(Incident.occurred_at),
+            func.max(Incident.occurred_at),
+            func.count(Incident.id),
+            func.count(Incident.neighborhood_id),
+        ).where(*incident_filters)
+    ).one()
+    coverage_days = (coverage_end.date() - coverage_start.date()).days + 1 if coverage_start and coverage_end else 0
+    neighborhood_total = db.scalar(
+        select(func.count(Neighborhood.id)).where(Neighborhood.municipality_code == municipality_code)
+    ) or 0
+    geometry_total = db.scalar(
+        select(func.count(Neighborhood.id)).where(
+            Neighborhood.municipality_code == municipality_code,
+            Neighborhood.geom.isnot(None),
+        )
+    ) or 0
+
     return {
-        "contract_version": "2026-01",
+        "contract_version": "2026-02",
         "mode": "live",
         "generated_at": datetime.utcnow(),
         "filters": {
@@ -186,11 +274,12 @@ def dashboard(
             "start_date": start_date,
             "end_date": end_date,
             "period_days": period_days,
+            "include_geometry": include_geometry,
         },
         "metrics": {
-            "neighborhoods": db.scalar(select(func.count(Neighborhood.id)).where(Neighborhood.municipality_code == municipality_code)) or 0,
+            "neighborhoods": neighborhood_total,
             "active_alerts": active_alerts,
-            "forecasts": db.scalar(select(func.count(Forecast.id)).where(Forecast.module == module)) or 0,
+            "forecasts": len(forecast_rows),
             "data_sources": db.scalar(select(func.count(DataSource.id))) or 0,
             "incidents": incident_total,
             "high_risk": sum(1 for score in risk_scores if score >= 65),
@@ -203,7 +292,7 @@ def dashboard(
                 "id": forecast.neighborhood_id,
                 "label": name or "Bairro",
                 "risk_score": adjusted_score(forecast.neighborhood_id, forecast.risk_score),
-                "probability": round(adjusted_score(forecast.neighborhood_id, forecast.risk_score) / 100, 4),
+                "probability": adjusted_probability(forecast.neighborhood_id, forecast),
                 "predicted_value": forecast.predicted_value,
                 "confidence": forecast.confidence,
                 "incident_count": int(incident_counts.get(forecast.neighborhood_id, 0)),
@@ -217,7 +306,28 @@ def dashboard(
         "model": {
             "version": latest_forecast_obj.model_version if latest_forecast_obj else None,
             "validation_metrics": validation_metrics,
-            "explainability": "feature_importance + variáveis observadas por bairro",
+            "explainability": "Importância das variáveis e valores observados em cada bairro.",
+            "method": latest_explanation.get("method"),
+            "horizon_days": latest_explanation.get("horizon_days", window_days),
+            "target_disease": latest_explanation.get("target_disease", selected_category),
+            "training_history": latest_explanation.get("training_history", {}),
+            "probability_definition": latest_explanation.get("probability_definition"),
+            "priority_score_definition": latest_explanation.get("priority_score_definition"),
+            "feature_importance": latest_explanation.get("feature_importance", {}),
+            "data_freshness_days": latest_explanation.get("data_freshness_days"),
+            "quality_gate": latest_explanation.get("quality_gate", {"passed": bool(latest_forecast_obj), "reasons": []}),
+        },
+        "data_quality": {
+            "coverage_start": coverage_start,
+            "coverage_end": coverage_end,
+            "coverage_days": coverage_days,
+            "historical_years": round(coverage_days / 365.25, 2) if coverage_days else 0,
+            "raw_incidents": int(raw_incidents or 0),
+            "geocoded_incidents": int(geocoded_incidents or 0),
+            "geocoding_rate": round(float(geocoded_incidents or 0) / max(int(raw_incidents or 0), 1), 4),
+            "geometry_rate": round(float(geometry_total) / max(int(neighborhood_total), 1), 4),
+            "neighborhoods_with_forecast": len(risk_by_neighborhood),
+            "forecast_coverage_rate": round(float(len(risk_by_neighborhood)) / max(int(neighborhood_total), 1), 4),
         },
         "alerts": [
             {

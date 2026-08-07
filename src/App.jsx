@@ -18,13 +18,13 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<ProtectedRoute><AppShell /></ProtectedRoute>}>
+      <Route path="/" element={<AppShell />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Suspense fallback={<PageFallback />}><DashboardPage /></Suspense>} />
-        <Route path="fontes" element={<Suspense fallback={<PageFallback />}><DataSourcesPage /></Suspense>} />
-        <Route path="operacoes" element={<Suspense fallback={<PageFallback />}><OperationsPage /></Suspense>} />
-        <Route path="previsoes" element={<Suspense fallback={<PageFallback />}><ForecastsPage /></Suspense>} />
-        <Route path="relatorios" element={<Suspense fallback={<PageFallback />}><ReportsPage /></Suspense>} />
+        <Route path="fontes" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><DataSourcesPage /></Suspense></ProtectedRoute>} />
+        <Route path="operacoes" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><OperationsPage /></Suspense></ProtectedRoute>} />
+        <Route path="previsoes" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><ForecastsPage /></Suspense></ProtectedRoute>} />
+        <Route path="relatorios" element={<ProtectedRoute><Suspense fallback={<PageFallback />}><ReportsPage /></Suspense></ProtectedRoute>} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

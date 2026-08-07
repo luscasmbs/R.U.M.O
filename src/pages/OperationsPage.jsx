@@ -16,8 +16,8 @@ export function OperationsPage() {
   const queryClient = useQueryClient();
   const user = getStoredUser();
   const canManage = ["admin", "analyst"].includes(user?.role);
-  const ingestion = useMutation({ mutationFn: (payload) => api.post("/ingestion/run", payload), onSuccess: () => queryClient.invalidateQueries() });
-  const train = useMutation({ mutationFn: () => api.post("/ml/train", { module: "epidemiology", disease: trainingDisease === "all" ? null : trainingDisease }), onSuccess: () => queryClient.invalidateQueries() });
+  const ingestion = useMutation({ mutationFn: (payload) => api.post("/ingestion/run", payload, { timeout: 180_000 }), onSuccess: () => queryClient.invalidateQueries() });
+  const train = useMutation({ mutationFn: () => api.post("/ml/train", { module: "epidemiology", disease: trainingDisease === "all" ? null : trainingDisease }, { timeout: 600_000 }), onSuccess: () => queryClient.invalidateQueries() });
   const pending = ingestion.isPending || train.isPending;
 
   return (

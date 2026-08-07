@@ -18,7 +18,10 @@ function popupFor(feature) {
   const title = document.createElement("strong");
   title.textContent = properties.name || "Bairro";
   const body = document.createElement("p");
-  body.textContent = `Score ${properties.risk_score ?? "sem previsão"}/100 · ${properties.incident_count ?? 0} ocorrências · probabilidade ${Math.round((properties.probability || 0) * 100)}%`;
+  const probability = properties.probability === null || properties.probability === undefined
+    ? "não estimada"
+    : `${Math.round(properties.probability * 100)}%`;
+  body.textContent = `Score ${properties.risk_score ?? "sem previsão"}/100 · ${properties.incident_count ?? 0} ocorrências · probabilidade ${probability}`;
   content.append(title, body);
   return content;
 }
@@ -26,7 +29,14 @@ function popupFor(feature) {
 export function RiskMap({ geojson }) {
   const [layers, setLayers] = useState({ areas: true, heat: true, points: true });
   const features = useMemo(() => geojson?.features || [], [geojson]);
-  const points = useMemo(() => features.filter((feature) => feature.properties?.centroid_lat && feature.properties?.centroid_lon), [features]);
+  const points = useMemo(
+    () => features.filter((feature) => feature.properties?.centroid_lat && feature.properties?.centroid_lon),
+    [features],
+  );
+  const riskLayerKey = useMemo(
+    () => features.map((feature) => `${feature.id}:${feature.properties?.risk_score ?? "none"}`).join("|"),
+    [features],
+  );
   if (!features.length) {
     return <EmptyState title="Mapa sem bairros carregados" description="Execute a ingestão geográfica do IBGE ou ative o modo demonstração para visualizar a malha." />;
   }
@@ -41,18 +51,18 @@ export function RiskMap({ geojson }) {
       <MapContainer center={RECIFE_CENTER} zoom={12} className="risk-map" scrollWheelZoom>
         <TileLayer attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         {layers.areas && <GeoJSON
-          key={`${JSON.stringify(geojson).length}-${layers.areas}`}
+          key={`${riskLayerKey}-${layers.areas}`}
           data={geojson}
           style={(feature) => ({ color: "#ffffff", weight: 1, fillColor: riskColor(feature.properties?.risk_score || 0), fillOpacity: 0.62 })}
           onEachFeature={(feature, layer) => layer.bindPopup(popupFor(feature))}
         />}
         {layers.heat && points.map((feature) => {
-          const p = feature.properties;
-          return <Circle key={`heat-${feature.id}`} center={[p.centroid_lat, p.centroid_lon]} radius={Math.max(450, (p.risk_score || 0) * 13)} pathOptions={{ color: riskColor(p.risk_score), fillColor: riskColor(p.risk_score), fillOpacity: 0.12, weight: 0 }} />;
+          const properties = feature.properties;
+          return <Circle key={`heat-${feature.id}`} center={[properties.centroid_lat, properties.centroid_lon]} radius={Math.max(450, (properties.risk_score || 0) * 13)} pathOptions={{ color: riskColor(properties.risk_score), fillColor: riskColor(properties.risk_score), fillOpacity: 0.12, weight: 0 }} />;
         })}
         {layers.points && points.map((feature) => {
-          const p = feature.properties;
-          return <CircleMarker key={`point-${feature.id}`} center={[p.centroid_lat, p.centroid_lon]} radius={6 + Math.round((p.risk_score || 0) / 25)} pathOptions={{ color: "#fff", weight: 2, fillColor: riskColor(p.risk_score), fillOpacity: 1 }}><Tooltip direction="top">{p.name}: {p.risk_score}/100</Tooltip></CircleMarker>;
+          const properties = feature.properties;
+          return <CircleMarker key={`point-${feature.id}`} center={[properties.centroid_lat, properties.centroid_lon]} radius={6 + Math.round((properties.risk_score || 0) / 25)} pathOptions={{ color: "#fff", weight: 2, fillColor: riskColor(properties.risk_score), fillOpacity: 1 }}><Tooltip direction="top">{properties.name}: {properties.risk_score}/100</Tooltip></CircleMarker>;
         })}
       </MapContainer>
       <div className="map-legend" aria-label="Legenda de risco">
