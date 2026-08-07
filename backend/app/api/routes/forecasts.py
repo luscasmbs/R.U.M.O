@@ -7,8 +7,31 @@ from app.db.session import get_db
 from app.models.forecast import Forecast
 from app.models.neighborhood import Neighborhood
 from app.models.user import User
+from app.services.ml.metadata import with_current_freshness
 
 router = APIRouter()
+
+
+def _serialize_forecast(forecast: Forecast, neighborhood_name: str | None) -> dict:
+    explanation = with_current_freshness(forecast.explanation)
+    probability = explanation.get("probability")
+    if probability is None and explanation.get("method") != "moving_average_baseline":
+        probability = round(forecast.risk_score / 100, 4)
+    return {
+        "id": forecast.id,
+        "neighborhood_id": forecast.neighborhood_id,
+        "neighborhood_name": neighborhood_name or "Recife",
+        "module": forecast.module,
+        "target_date": forecast.target_date,
+        "created_at": forecast.created_at,
+        "horizon_days": forecast.horizon_days,
+        "risk_score": round(forecast.risk_score, 2),
+        "probability": probability,
+        "predicted_value": forecast.predicted_value,
+        "confidence": forecast.confidence,
+        "model_version": forecast.model_version,
+        "explanation": explanation,
+    }
 
 
 @router.get("")
@@ -49,24 +72,5 @@ def list_forecasts(
     return {
         "contract_version": "2026-01",
         "mode": "live",
-        "items": [
-            {
-                "id": forecast.id,
-                "neighborhood_id": forecast.neighborhood_id,
-                "neighborhood_name": name or "Recife",
-                "module": forecast.module,
-                "target_date": forecast.target_date,
-                "created_at": forecast.created_at,
-                "horizon_days": forecast.horizon_days,
-                "risk_score": round(forecast.risk_score, 2),
-                "probability": (forecast.explanation or {}).get("probability")
-                if (forecast.explanation or {}).get("probability") is not None
-                else round(forecast.risk_score / 100, 4),
-                "predicted_value": forecast.predicted_value,
-                "confidence": forecast.confidence,
-                "model_version": forecast.model_version,
-                "explanation": forecast.explanation or {},
-            }
-            for forecast, name in rows
-        ],
+        "items": [_serialize_forecast(forecast, name) for forecast, name in rows],
     }

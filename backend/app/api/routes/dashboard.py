@@ -13,6 +13,7 @@ from app.models.forecast import Forecast
 from app.models.incident import Incident
 from app.models.neighborhood import Neighborhood
 from app.models.user import User
+from app.services.ml.metadata import with_current_freshness
 
 router = APIRouter()
 
@@ -224,7 +225,9 @@ def dashboard(
 
     risk_scores = [float(forecast.risk_score) for forecast, *_ in forecast_rows]
     latest_forecast_obj = forecast_rows[0][0] if forecast_rows else None
-    latest_explanation = (latest_forecast_obj.explanation or {}) if latest_forecast_obj else {}
+    latest_explanation = with_current_freshness(
+        latest_forecast_obj.explanation if latest_forecast_obj else None
+    )
     validation_metrics = latest_explanation.get("validation_metrics", {})
     active_alerts = db.scalar(
         select(func.count(Alert.id))
@@ -297,7 +300,7 @@ def dashboard(
                 "confidence": forecast.confidence,
                 "incident_count": int(incident_counts.get(forecast.neighborhood_id, 0)),
                 "model_version": forecast.model_version,
-                "explanation": forecast.explanation or {},
+                "explanation": with_current_freshness(forecast.explanation),
             }
             for forecast, name, *_ in forecast_rows[:12]
         ],
