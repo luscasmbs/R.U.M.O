@@ -19,6 +19,7 @@ from app.services.connectors.apac import ApacConnector
 from app.services.connectors.datasus import DatasusConnector
 from app.services.connectors.ibge_geo import IbgeGeoConnector
 from app.services.connectors.inmet import InmetConnector
+from app.services.connectors.open_meteo import OpenMeteoConnector
 from app.services.connectors.recife_ckan import RecifeCkanConnector
 from app.services.etl.source_registry import get_or_create_source, mark_source_error, mark_source_success
 
@@ -188,6 +189,27 @@ class IngestionService:
         links = await ApacConnector().monitoring_links()
         mark_source_success(self.db, source, {"monitoring_links": links[:20]})
         return {"source": source.name, "links": len(links)}
+
+    async def register_open_meteo(self) -> dict:
+        source = get_or_create_source(
+            self.db,
+            name="Open-Meteo - Previsão do Recife",
+            kind="weather_forecast",
+            base_url=str(settings.open_meteo_base_url),
+            refresh_frequency="a cada 15 minutos",
+        )
+        try:
+            forecast = await OpenMeteoConnector().forecast()
+            metadata = {
+                "updated_at": forecast["updated_at"],
+                "forecast_days": len(forecast["daily"]),
+                "next_24h": forecast["next_24h"],
+            }
+            mark_source_success(self.db, source, metadata)
+            return {"source": source.name, **metadata}
+        except Exception as exc:
+            mark_source_error(self.db, source, str(exc))
+            raise
 
     async def register_datasus(self) -> dict:
         source = get_or_create_source(

@@ -7,11 +7,12 @@ import { ModelSummary } from "../components/dashboard/ModelSummary";
 import { MetricCards } from "../components/dashboard/MetricCards";
 import { RiskChart } from "../components/dashboard/RiskChart";
 import { RiskMap } from "../components/dashboard/RiskMap";
+import { WeatherSummary } from "../components/dashboard/WeatherSummary";
 import { EmptyState } from "../components/common/EmptyState";
 import { Skeleton } from "../components/common/Skeleton";
 import { getDemoDashboard } from "../data/demoData";
 import { moduleConfigs, modules } from "../config/dashboardModules";
-import { useDashboard, useNeighborhoodGeoJSON } from "../hooks/useDashboard";
+import { useDashboard, useNeighborhoodGeoJSON, useWeatherForecast } from "../hooks/useDashboard";
 
 function mergeRiskWithGeometry(geometry, riskGeoJSON) {
   if (!geometry?.features?.length) return riskGeoJSON;
@@ -44,6 +45,7 @@ export function DashboardPage() {
   const canManage = ["admin", "analyst"].includes(user?.role);
   const query = useDashboard({ module, category, window_days: windowDays, municipality_code: municipality, period_days: Number(period) });
   const geometryQuery = useNeighborhoodGeoJSON(municipality);
+  const weatherQuery = useWeatherForecast();
   const hasLiveData = Boolean(query.data?.metrics && (
     query.data.metrics.neighborhoods > 0
     || query.data.metrics.forecasts > 0
@@ -91,6 +93,8 @@ export function DashboardPage() {
         {canManage && <button className="icon-text-button solid" onClick={runRefresh} disabled={query.isFetching}><RefreshCw size={17} className={query.isFetching ? "spin" : ""} /> Atualizar dados</button>}
       </section>
       {notice && <div className="inline-notice"><ShieldAlert size={17} /> {notice}</div>}
+
+      <WeatherSummary forecast={weatherQuery.data} isLoading={weatherQuery.isLoading} />
 
       {query.isLoading && <Skeleton rows={5} />}
       {query.error && !isDemo && <EmptyState title="Falha ao carregar o painel" description={getApiErrorMessage(query.error)} />}

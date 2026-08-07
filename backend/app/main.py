@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 import structlog
 
-from app.api.routes import alerts, auth, dashboard, data_sources, forecasts, health, ingestion, ml, neighborhoods, users
+from app.api.routes import alerts, auth, dashboard, data_sources, forecasts, health, ingestion, ml, neighborhoods, users, weather
 from app.core.config import settings
 
 logger = structlog.get_logger()
@@ -58,6 +58,7 @@ def create_app() -> FastAPI:
     app.include_router(alerts.router, prefix="/api/v1/alerts", tags=["alerts"])
     app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["dashboard"])
     app.include_router(forecasts.router, prefix="/api/v1/forecasts", tags=["forecasts"])
+    app.include_router(weather.router, prefix="/api/v1/weather", tags=["weather"])
     app.include_router(ingestion.router, prefix="/api/v1/ingestion", tags=["ingestion"])
     app.include_router(ml.router, prefix="/api/v1/ml", tags=["ml"])
     return app

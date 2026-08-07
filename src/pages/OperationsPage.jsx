@@ -1,12 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { BrainCircuit, CloudDownload, Droplets, FileHeart, MapPinned, RadioTower } from "lucide-react";
+import { BrainCircuit, CloudDownload, CloudSun, Droplets, FileHeart, MapPinned, RadioTower } from "lucide-react";
 import { api, getApiErrorMessage, getStoredUser } from "../api/client";
 
 const actions = [
   { key: "recife_ckan", title: "Arboviroses do Recife", description: "Baixa recursos CKAN oficiais de dengue, zika e chikungunya e normaliza ocorrências históricas.", icon: CloudDownload, source: "Portal de Dados Abertos do Recife" },
   { key: "datasus", title: "Contrato DATASUS", description: "Registra o contrato e a prontidão do conector epidemiológico para a carga oficial.", icon: FileHeart, source: "DATASUS" },
   { key: "inmet", title: "Estações meteorológicas", description: "Consulta estações públicas do INMET para alimentar chuva, temperatura e umidade.", icon: RadioTower, source: "INMET" },
+  { key: "open_meteo", title: "Previsão climática do Recife", description: "Atualiza condições atuais e a previsão de chuva e temperatura para os próximos 14 dias.", icon: CloudSun, source: "Open-Meteo" },
   { key: "apac", title: "Monitoramento APAC", description: "Coleta links oficiais de boletins, chuva e cotas para rastreabilidade hídrica.", icon: Droplets, source: "APAC" },
   { key: "ibge_geo", title: "Malha territorial IBGE", description: "Baixa a malha oficial de bairros/setores e persiste geometrias em PostGIS.", icon: MapPinned, source: "IBGE" },
 ];

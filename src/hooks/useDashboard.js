@@ -35,6 +35,18 @@ export function useDataSources() {
   });
 }
 
+export function useWeatherForecast() {
+  return useQuery({
+    queryKey: ["weather", "forecast", "recife"],
+    queryFn: async ({ signal }) => {
+      const { data } = await api.get("/weather/forecast", { signal });
+      return data;
+    },
+    staleTime: 15 * 60 * 1000,
+    retry: 1,
+  });
+}
+
 export function useForecasts(filters) {
   return useQuery({
     queryKey: ["forecasts", filters],

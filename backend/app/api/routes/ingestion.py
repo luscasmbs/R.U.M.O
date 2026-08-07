@@ -26,6 +26,8 @@ async def run_ingestion(payload: IngestionRequest, _: User = Depends(require_rol
             results[source] = await service.ingest_ibge_geo()
         elif source == "inmet":
             results[source] = await service.register_inmet()
+        elif source == "open_meteo":
+            results[source] = await service.register_open_meteo()
         elif source == "apac":
             results[source] = await service.register_apac()
         elif source == "datasus":

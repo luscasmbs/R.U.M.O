@@ -19,9 +19,13 @@ class Settings(BaseSettings):
     recife_arboviruses_dataset: str = "casos-de-dengue-zika-e-chikungunya"
     datasus_base_url: AnyHttpUrl = "https://datasus.saude.gov.br"
     inmet_api_base_url: AnyHttpUrl = "https://apitempo.inmet.gov.br"
+    open_meteo_base_url: AnyHttpUrl = "https://api.open-meteo.com/v1"
     apac_base_url: AnyHttpUrl = "https://www.apac.pe.gov.br"
     ibge_geo_url: str = "https://geoftp.ibge.gov.br/organizacao_do_territorio/malhas_territoriais/malhas_de_setores_censitarios__divisoes_intramunicipais/censo_2022/malha_de_bairros/PE/PE_bairros_2022.zip"
     recife_municipality_code: str = "2611606"
+    recife_latitude: float = -8.0476
+    recife_longitude: float = -34.8770
+    recife_timezone: str = "America/Sao_Paulo"
     data_history_years: int = 5
     model_min_history_days: int = 365
     forecast_horizons: list[int] = [1, 7, 28]

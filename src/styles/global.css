@@ -74,6 +74,19 @@ select { min-width: 148px; }
 .icon-text-button:hover, .primary-button:hover { filter: brightness(.96); transform: translateY(-1px); }
 .icon-text-button:disabled, .primary-button:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 .inline-notice { display: flex; align-items: center; gap: 8px; color: #76521c; background: #fff7e8; border: 1px solid #f0d6a6; border-radius: 9px; padding: 10px 12px; font-size: 13px; }
+.weather-strip { display: grid; grid-template-columns: minmax(240px, .8fr) minmax(500px, 1.6fr) minmax(190px, .6fr); align-items: center; gap: 18px; min-height: 92px; padding: 14px 17px; border: 1px solid #c8dde3; border-left: 4px solid var(--primary); background: #f6fbfc; box-shadow: 0 8px 22px rgba(16, 43, 63, .04); }
+.weather-loading { background: linear-gradient(90deg, #edf4f6, #f8fbfc, #edf4f6); background-size: 200% 100%; animation: shimmer 1.4s infinite; }
+.weather-heading { display: flex; align-items: center; gap: 11px; min-width: 0; color: var(--primary); }
+.weather-heading > svg { flex: 0 0 auto; }
+.weather-heading strong, .weather-heading small { display: block; }
+.weather-heading strong { color: var(--text); font-size: 14px; }
+.weather-heading small { margin-top: 3px; color: var(--muted); font-size: 10px; line-height: 1.35; }
+.weather-measures { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 0; }
+.weather-measures > div { min-width: 0; padding-left: 10px; border-left: 1px solid var(--line); }
+.weather-measures svg { color: var(--primary); float: left; margin: 1px 6px 12px 0; }
+.weather-measures dt { color: var(--muted); font-size: 9px; line-height: 1.25; }
+.weather-measures dd { margin: 3px 0 0; color: #14364a; font-size: 12px; font-weight: 850; line-height: 1.3; }
+.weather-strip > p { margin: 0; color: var(--muted); font-size: 10px; line-height: 1.45; }
 .metric-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
 .metric-card, .surface-card, .source-card, .operation-card, .login-panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow); }
 .metric-card { min-width: 0; padding: 15px; display: flex; gap: 11px; align-items: flex-start; }
@@ -112,3 +125,15 @@ select { min-width: 148px; }
 @media (max-width: 1220px) { .app-shell { grid-template-columns: 228px minmax(0, 1fr); }.main-surface { padding-left: 20px; padding-right: 20px; }.metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }.dashboard-grid { grid-template-columns: minmax(0, 1fr); }.map-card { min-height: 0; }.three-column-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.three-column-grid > :last-child { grid-column: 1 / -1; } }
 @media (max-width: 860px) { .app-shell { display: block; }.sidebar { position: sticky; top: 0; z-index: 1000; padding: 10px 12px; flex-direction: row; align-items: center; overflow-x: auto; gap: 10px; }.brand-block { flex: 0 0 auto; }.brand-block div:not(.brand-mark), .sidebar-rule, .sidebar-context, .user-pill { display: none; }.nav-list { display: flex; }.nav-link { padding: 10px; }.nav-link span { display: none; }.sidebar-footer { margin-left: auto; display: flex; }.sidebar-footer .icon-text-button { padding: 9px; font-size: 0; }.sidebar-footer .icon-text-button svg { margin: 0; }.main-topbar { min-height: 42px; }.source-grid, .operation-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }.forecast-layout { grid-template-columns: 1fr; }.forecast-detail { min-height: 0; }.forecast-hero { grid-template-columns: minmax(0, 1fr) 125px 125px; }.source-overview { grid-template-columns: repeat(2, 1fr); }.report-selector { grid-template-columns: repeat(2, minmax(0, 1fr)); }.report-content-grid { grid-template-columns: 1fr; } }
 @media (max-width: 600px) { .main-surface { padding: 0 12px 22px; }.main-topbar { font-size: 9px; }.main-topbar > span:first-child { max-width: 210px; }.page-stack { padding-top: 20px; gap: 14px; }.page-header { align-items: stretch; flex-direction: column; }.page-header h1 { font-size: 26px; }.header-status { align-self: flex-start; }.control-bar { align-items: stretch; }.control-group { flex: 1 1 130px; }.control-group select { width: 100%; }.control-spacer { display: none; }.control-bar .demo-badge { order: 5; }.control-bar .icon-text-button { width: 100%; }.metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }.metric-card { padding: 11px; }.metric-icon { width: 27px; height: 27px; flex-basis: 27px; }.metric-card strong { font-size: 19px; }.metric-card em { white-space: normal; }.three-column-grid { grid-template-columns: 1fr; }.three-column-grid > :last-child { grid-column: auto; }.source-grid, .operation-grid { grid-template-columns: 1fr; }.source-overview { grid-template-columns: repeat(2, 1fr); }.source-overview strong { font-size: 18px; }.risk-map { height: 410px; }.map-tools { right: 10px; }.map-legend { left: 10px; right: auto; }.card-header > span { max-width: 125px; }.data-disclaimer { flex-direction: column; }.forecast-hero { grid-template-columns: 1fr 1fr; gap: 15px; }.forecast-hero-copy { grid-column: 1 / -1; }.hero-stat { border-left: 0; border-top: 1px solid rgba(255,255,255,.2); padding: 12px 0 0; }.forecast-row { grid-template-columns: 10px minmax(0, 1fr) 52px 17px; padding: 9px 4px; }.forecast-probability { display: none; }.forecast-place strong { font-size: 12px; }.login-panel { padding: 23px; }.login-footer { flex-direction: column; }.login-caption { bottom: 10px; font-size: 8px; }.model-metrics { grid-template-columns: repeat(2, 1fr); }.report-selector { grid-template-columns: 1fr; }.report-actions { justify-content: stretch; flex-wrap: wrap; }.report-actions button { flex: 1; }.report-sheet { padding: 18px; }.report-kpis { grid-template-columns: repeat(2, 1fr); }.report-sheet-footer { flex-direction: column; }.report-sheet-footer span:last-child { text-align: left; } }
+
+@media (max-width: 1220px) {
+  .weather-strip { grid-template-columns: minmax(220px, .7fr) minmax(0, 1.3fr); }
+  .weather-strip > p { grid-column: 1 / -1; }
+}
+
+@media (max-width: 600px) {
+  .weather-strip { grid-template-columns: 1fr; gap: 12px; }
+  .weather-strip > p { grid-column: auto; }
+  .weather-measures { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .weather-measures > div { padding: 8px; border: 1px solid var(--line); }
+}
