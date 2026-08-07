@@ -14,6 +14,7 @@ O R.U.M.O é uma plataforma de inteligência territorial baseada em dados públi
 - Backend FastAPI com JWT, RBAC, CORS, rate limiting, healthcheck e tratamento global de erros.
 - PostgreSQL + PostGIS via Docker Compose e migrações Alembic.
 - Conectores para Portal de Dados Abertos do Recife, INMET, APAC e IBGE, além do contrato de integração preparado para DATASUS.
+- Condições atuais e previsão climática de 14 dias para Recife via Open-Meteo, com atualização automática e uso contextual.
 - Pipeline de ML epidemiológico com Random Forest, fallback estatístico por média móvel e explicabilidade persistida.
 - Registro de fontes, versionamento de modelo e auditoria de ingestões/treinos.
 - Catálogo demonstrativo no frontend usando o mesmo contrato dos dados reais para desenvolvimento sem as APIs disponíveis.
@@ -34,6 +35,10 @@ Usuário inicial:
 admin@rumo.local
 admin123
 ```
+
+## Publicar gratuitamente
+
+O repositório inclui um Blueprint para frontend e backend no Render. O PostgreSQL/PostGIS pode ser hospedado no plano gratuito do Neon. Consulte [DEPLOYMENT.md](DEPLOYMENT.md) para criar o banco, configurar os segredos e publicar os dois serviços.
 
 ## Fluxo inicial
 
