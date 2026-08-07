@@ -52,6 +52,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .runtime-error { min-height: 100vh; display: grid; place-content: center; justify-items: center; gap: 12px; padding: 24px; text-align: center; background: var(--background); color: var(--text); }
 .runtime-error h1 { margin: 0; font-size: 24px; }
 .runtime-error p { max-width: 520px; margin: 0 0 8px; color: var(--muted); }
+.runtime-error-detail { max-width: min(720px, 90vw); overflow-wrap: anywhere; padding: 8px 10px; border: 1px solid var(--line); background: var(--surface); color: var(--danger); font-size: 12px; }
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
 .page-header h1 { margin: 5px 0 8px; font-size: clamp(25px, 3vw, 36px); line-height: 1.08; letter-spacing: -.035em; color: #0c283b; }
 .page-header p { margin: 0; color: var(--muted); max-width: 710px; line-height: 1.55; }

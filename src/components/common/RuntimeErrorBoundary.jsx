@@ -20,6 +20,7 @@ export class RuntimeErrorBoundary extends Component {
         <TriangleAlert size={28} />
         <h1>Não foi possível carregar esta tela</h1>
         <p>A aplicação encontrou uma versão incompleta dos arquivos. Recarregue para continuar.</p>
+        {import.meta.env.DEV && <code className="runtime-error-detail">{this.state.error.message}</code>}
         <button className="primary-button" onClick={() => window.location.reload()}>
           <RefreshCw size={17} /> Recarregar
         </button>
