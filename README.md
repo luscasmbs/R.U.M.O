@@ -13,7 +13,7 @@ O R.U.M.O é uma plataforma de inteligência territorial baseada em dados públi
 - Página de previsões com score, probabilidade, confiança, fatores contribuintes, métricas AUC/precisão/recall/F1 e histórico.
 - Backend FastAPI com JWT, RBAC, CORS, rate limiting, healthcheck e tratamento global de erros.
 - PostgreSQL + PostGIS via Docker Compose e migrações Alembic.
-- Conectores para Portal de Dados Abertos do Recife, INMET, APAC e IBGE, além do contrato de integração preparado para DATASUS.
+- Conectores para Portal de Dados Abertos do Recife, Open Data SUS, INMET, APAC e IBGE.
 - Condições atuais e previsão climática de 14 dias para Recife via Open-Meteo, com atualização automática e uso contextual.
 - Pipeline de ML epidemiológico com Random Forest, fallback estatístico por média móvel e explicabilidade persistida.
 - Registro de fontes, versionamento de modelo e auditoria de ingestões/treinos.

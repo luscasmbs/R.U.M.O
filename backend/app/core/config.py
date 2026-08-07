@@ -17,7 +17,7 @@ class Settings(BaseSettings):
 
     recife_ckan_base_url: AnyHttpUrl = "https://dados.recife.pe.gov.br/api/3/action"
     recife_arboviruses_dataset: str = "casos-de-dengue-zika-e-chikungunya"
-    datasus_base_url: AnyHttpUrl = "https://datasus.saude.gov.br"
+    datasus_base_url: AnyHttpUrl = "https://apidadosabertos.saude.gov.br"
     inmet_api_base_url: AnyHttpUrl = "https://apitempo.inmet.gov.br"
     open_meteo_base_url: AnyHttpUrl = "https://api.open-meteo.com/v1"
     apac_base_url: AnyHttpUrl = "https://www.apac.pe.gov.br"

@@ -10,6 +10,10 @@ from app.models.data_source import DataSource
 def get_or_create_source(db: Session, *, name: str, kind: str, base_url: str, refresh_frequency: str | None = None) -> DataSource:
     source = db.scalar(select(DataSource).where(DataSource.name == name))
     if source:
+        source.kind = kind
+        source.base_url = base_url
+        source.refresh_frequency = refresh_frequency
+        db.add(source)
         return source
     source = DataSource(name=name, kind=kind, base_url=base_url, refresh_frequency=refresh_frequency, metadata_json={})
     db.add(source)
@@ -22,7 +26,7 @@ def ensure_default_sources(db: Session) -> list[DataSource]:
     """Keep the public-data catalog visible before the first ingestion."""
     definitions = [
         ("Recife Dados Abertos - Arboviroses", "ckan", str(settings.recife_ckan_base_url), "trimestral", "active", "Arboviroses", "CKAN API"),
-        ("DATASUS - Notificações epidemiológicas", "health_data", str(settings.datasus_base_url), "mensal", "ready", "Notificações epidemiológicas", "TabNet / arquivos oficiais"),
+        ("DATASUS - Notificações epidemiológicas", "health_data", str(settings.datasus_base_url), "semanal", "ready", "Sinal municipal recente de arboviroses", "API Open Data SUS"),
         ("INMET", "weather_api", str(settings.inmet_api_base_url), "diária", "ready", "Chuva, temperatura e umidade", "API pública"),
         ("Open-Meteo - Previsão do Recife", "weather_forecast", str(settings.open_meteo_base_url), "a cada 15 minutos", "ready", "Condições atuais e previsão de 14 dias", "API pública"),
         ("APAC", "weather_monitoring", str(settings.apac_base_url), "diária", "monitoring", "Monitoramento hídrico e boletins", "links oficiais"),

@@ -47,6 +47,18 @@ export function useWeatherForecast() {
   });
 }
 
+export function useRecentEpidemiologySignal() {
+  return useQuery({
+    queryKey: ["epidemiology", "recent-signal", "recife"],
+    queryFn: async ({ signal }) => {
+      const { data } = await api.get("/epidemiology/recent-signal", { signal, timeout: 90_000 });
+      return data;
+    },
+    staleTime: 6 * 60 * 60 * 1000,
+    retry: 1,
+  });
+}
+
 export function useForecasts(filters) {
   return useQuery({
     queryKey: ["forecasts", filters],

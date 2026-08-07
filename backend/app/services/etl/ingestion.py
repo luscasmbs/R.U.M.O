@@ -217,8 +217,14 @@ class IngestionService:
             name="DATASUS - Notificações epidemiológicas",
             kind="health_data",
             base_url=str(settings.datasus_base_url),
-            refresh_frequency="mensal",
+            refresh_frequency="semanal",
         )
         metadata = await DatasusConnector().metadata()
         mark_source_success(self.db, source, metadata)
-        return {"source": source.name, "mode": metadata["mode"], "records": len(metadata["records"]), "ready": True}
+        return {
+            "source": source.name,
+            "mode": metadata["mode"],
+            "latest_notification_date": metadata["latest_notification_date"],
+            "diseases": metadata["diseases"],
+            "ready": True,
+        }
